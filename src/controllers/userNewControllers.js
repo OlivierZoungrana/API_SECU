@@ -1,6 +1,8 @@
 import {userSchema} from "../models/userNewModels.js"
 import mongoose from "mongoose"
+import jwt from "jsonwebtoken"
 const user = mongoose.model('user', userSchema)
+const wordToken ="12345678"
 import bcrypt, { hash } from 'bcrypt'
 
 
@@ -21,7 +23,31 @@ export const addUser = (req, res, next)=>{
    
 }
 
+export const login = (req, res, next)=>{
+    user.findOne({email: req.body.email})
+    .then(user=>{
+        if(!user){
+            return res.status(401).json({error: "utilisateur introuvable"})
+        }
+        bcrypt.compare(req.body.password, user.password)
+        .then(valid=>{
+            if(!valid){
+                return res.status(401).json({error: "mot de passe incorrect"})
+            }
 
+            let jwtToken = jwt.sign({
+                userId: user._id
+            },
+            wordToken, {expiresIn: '24h'}
+            )
+            res.header('Authorization', 'Bearer ' + jwtToken)
+            return res.status(200).json('auth_ok')
+            res.set()
+        })
+    })
+
+
+}
 export const getUser = (req, res)=>{
   
     user.find((err, user)=>{
